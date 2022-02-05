@@ -4,7 +4,11 @@ from PIL import ImageGrab
 import pytesseract
 from numpy import ndarray
 import re
-#from vision import Vision
+
+from hsvfilter import HsvFilter
+from vision import Vision
+
+vision = Vision(None)
 
 pytesseract.pytesseract.tesseract_cmd = "D:\\Program Files\\Tesseract-OCR\\tesseract.exe"
 
@@ -50,6 +54,9 @@ if __name__ == '__main__':
         print(f"FILENAME: {fname}")
         img = cv2.imread(fname)
 
+        hsv_filter = HsvFilter(80, 0, 174, 110, 151, 255, 0, 0, 0, 0)
+        img = vision.apply_hsv_filter(img, hsv_filter)
+
         mass_txt = search_text(roi(img, MASS_ROI), MASS_RE)
 
         minerals_roi = roi(img, MINERALS_ROI)
@@ -59,7 +66,8 @@ if __name__ == '__main__':
             mineral_result = try_to_find(MINERALS_RE[key], minerals_text)
             print(f"{key}: {mineral_result}")
 
-        cv2.imshow("minerals", img)
+        cv2.imshow("Unnamed", img)
+
         key = cv2.waitKey()
         if key == ord('q'):
             cv2.destroyAllWindows()
