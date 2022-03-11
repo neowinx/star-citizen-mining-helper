@@ -1,11 +1,10 @@
+import re
+import time
+
 import cv2
-import numpy as np
-from PIL import ImageGrab
 import pytesseract
 from numpy import ndarray
-import re
 
-from hsvfilter import HsvFilter
 from vision import Vision
 from windowcapture import WindowCapture
 
@@ -22,11 +21,11 @@ MASS_ROI = {"x1": 185, "y1": 443, "x2": 420, "y2": 590}
 MINERALS_ROI = {"x1": 1488, "y1": 464, "x2": 1714, "y2": 600}
 MASS_RE = re.compile(r"Mass: (.+)")
 MINERALS_RE = {
-        "Quantanium": {"re": re.compile(r"Quantanium \(Raw\): (.+)%"), "price": 88.00},
+        "Quantainium": {"re": re.compile(r"Quantainium \(Raw\): (.+)%"), "price": 88.00},
         "Bexalite": {"re": re.compile(r"Bexalite \(Raw\): (.+)%"), "price": 44.00},
         "Taranite": {"re": re.compile(r"Taranite \(Raw\): (.+)%"), "price": 35.21},
         "Borase": {"re": re.compile(r"Borase \(Ore\): (.+)%"), "price": 35.21},
-        "Laranite": {"re": re.compile(r"Laranite \(Ore\): (.+)%"), "price": 31.00},
+        "Laranite": {"re": re.compile(r"Laranite \(Raw\): (.+)%"), "price": 31.00},
         "Agricium": {"re": re.compile(r"Agricium \(Ore\): (.+)%"), "price": 27.41},
         "Hephaestanite": {"re": re.compile(r"Hephaestanite \(Raw\): (.+)%"), "price": 15.85},
         "Titanium": {"re": re.compile(r"Titanium \(Ore\): (.+)%"), "price": 8.90},
@@ -37,7 +36,7 @@ MINERALS_RE = {
         "Tungsten": {"re": re.compile(r"Tungsten \(Ore\): (.+)%"), "price": 4.06},
         "Corundum": {"re": re.compile(r"Corundum \(Raw\): (.+)%"), "price": 2.71},
         "Quartz": {"re": re.compile(r"Quartz \(Raw\): (.+)%"), "price": 1.55},
-        "Aluminium": {"re": re.compile(r"Aluminium \(Ore\): (.+)%"), "price": 1.30},
+        "Aluminum": {"re": re.compile(r"Aluminum \(Ore\): (.+)%"), "price": 1.30},
 }
 
 
@@ -80,17 +79,22 @@ if __name__ == '__main__':
             mineral_result: str = try_to_find(MINERALS_RE[key]['re'], minerals_text)
 
             # this not really the best approach but I am in a hurry right now
-            if mineral_result:
+            if mineral_result and mass_result:
                 try:
-                    total_auec += float(mineral_result) * 2.00 * float(mass_result)
+                    units = float(mineral_result) * 0.02 * float(mass_result)
+                    auec = MINERALS_RE[key]['price'] * units
+                    print(f"{key} | units: {units} auec: {int(auec):,}")
+                    total_auec += auec
                 except ValueError:
                     total_auec = total_auec
 
         if total_auec > 0:
-            print(f"Total aUEC: {total_auec}")
+            print(f"Total aUEC: {int(total_auec):,}")
+            print()
 
-        cv2.imshow("Unnamed", minerals_img)
-        key = cv2.waitKey(1)
-        if key == ord('q'):
-            cv2.destroyAllWindows()
-            break
+        time.sleep(1.0)
+        # cv2.imshow("Unnamed", minerals_img)
+        # key = cv2.waitKey(1)
+        # if key == ord('q'):
+        #     cv2.destroyAllWindows()
+        #     break
