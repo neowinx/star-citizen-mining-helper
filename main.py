@@ -7,6 +7,8 @@ from numpy import ndarray
 
 from vision import Vision
 from windowcapture import WindowCapture
+import tkinter as tk
+from tkinter import ttk
 
 # WindowCapture.list_window_names()
 # exit()
@@ -62,39 +64,65 @@ def try_to_find(pattern, text_from_roi):
         return txt_found.group(1)
 
 
+def get_minerals_values():
+    img = wincap.get_screenshot()
+
+    # hsv_filter = HsvFilter(80, 0, 174, 110, 151, 255, 0, 0, 0, 0)
+    # img = vision.apply_hsv_filter(img, hsv_filter)
+
+    mass_result = search_text(roi(img, MASS_ROI), MASS_RE)
+    minerals_img = roi(img, MINERALS_ROI)
+    minerals_text = pytesseract.image_to_string(minerals_img)
+
+    data = []
+    total_auec = 0
+
+    for key in MINERALS_RE.keys():
+        mineral_result: str = try_to_find(MINERALS_RE[key]['re'], minerals_text)
+
+        # this is not really the best approach but I am in a hurry right now
+        if mineral_result and mass_result:
+            try:
+                units = float(mineral_result) * 0.02 * float(mass_result)
+                auec = MINERALS_RE[key]['price'] * units
+                print(f"{key} | units: {units} auec: {int(auec):,}")
+                data.append({'mineral': key, 'auec': int(auec)})
+                total_auec += auec
+            except ValueError:
+                total_auec = total_auec
+
+    if total_auec > 0:
+        print(f"Total aUEC: {int(total_auec):,}")
+        print()
+
+        return {'data': data, 'total': int(total_auec)}
+
+
+class SCMHW(tk.Tk):
+  def __init__(self):
+    super().__init__()
+    self.title('Digital Clock')
+    self.resizable(0, 0)
+    self.geometry('320x240')
+    self.attributes('-alpha',0.5)
+    # change the background color to black
+    self.style = ttk.Style(self)
+    self.style.configure(
+        'TLabel',
+        background='black',
+        foreground='red')
+    self.
+
+  def addLabel(text):
+    # label
+    self.label = ttk.Label(
+        self,
+        text=text,
+        font=('Digital-7', 15))
+    self.label.pack(expand=True)
+
+
 if __name__ == '__main__':
-    while True:
-        img = wincap.get_screenshot()
+    scmhw = SCMHW()
+    scmhw.mainloop()
 
-        # hsv_filter = HsvFilter(80, 0, 174, 110, 151, 255, 0, 0, 0, 0)
-        # img = vision.apply_hsv_filter(img, hsv_filter)
-
-        mass_result = search_text(roi(img, MASS_ROI), MASS_RE)
-        minerals_img = roi(img, MINERALS_ROI)
-        minerals_text = pytesseract.image_to_string(minerals_img)
-
-        total_auec = 0
-
-        for key in MINERALS_RE.keys():
-            mineral_result: str = try_to_find(MINERALS_RE[key]['re'], minerals_text)
-
-            # this not really the best approach but I am in a hurry right now
-            if mineral_result and mass_result:
-                try:
-                    units = float(mineral_result) * 0.02 * float(mass_result)
-                    auec = MINERALS_RE[key]['price'] * units
-                    print(f"{key} | units: {units} auec: {int(auec):,}")
-                    total_auec += auec
-                except ValueError:
-                    total_auec = total_auec
-
-        if total_auec > 0:
-            print(f"Total aUEC: {int(total_auec):,}")
-            print()
-
-        time.sleep(1.0)
-        # cv2.imshow("Unnamed", minerals_img)
-        # key = cv2.waitKey(1)
-        # if key == ord('q'):
-        #     cv2.destroyAllWindows()
-        #     break
