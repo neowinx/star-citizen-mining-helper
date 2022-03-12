@@ -85,41 +85,65 @@ def get_minerals_values():
             try:
                 units = float(mineral_result) * 0.02 * float(mass_result)
                 auec = MINERALS_RE[key]['price'] * units
-                print(f"{key} | units: {units} auec: {int(auec):,}")
+                # print(f"{key} | units: {units} auec: {int(auec):,}")
                 data.append({'mineral': key, 'auec': int(auec)})
                 total_auec += auec
             except ValueError:
                 total_auec = total_auec
 
     if total_auec > 0:
-        print(f"Total aUEC: {int(total_auec):,}")
-        print()
+        # print(f"Total aUEC: {int(total_auec):,}")
+        # print()
 
         return {'data': data, 'total': int(total_auec)}
 
 
 class SCMHW(tk.Tk):
-  def __init__(self):
-    super().__init__()
-    self.title('Digital Clock')
-    self.resizable(0, 0)
-    self.geometry('320x240')
-    self.attributes('-alpha',0.5)
-    # change the background color to black
-    self.style = ttk.Style(self)
-    self.style.configure(
-        'TLabel',
-        background='black',
-        foreground='red')
-    self.
+    def __init__(self):
+        super().__init__()
+        self.title('SCMH')
+        self.resizable(0, 0)
+        self.geometry('320x240')
+        self['bg'] = 'black'
+        self.attributes('-alpha', 0.5)
+        self.attributes('-topmost', True)
+        # change the background color to black
+        self.style = ttk.Style(self)
+        self.style.configure(
+            'TLabel',
+            background='black',
+            foreground='white')
+        self.labels = []
+        self.after(1000, self.update_values)
 
-  def addLabel(text):
-    # label
-    self.label = ttk.Label(
-        self,
-        text=text,
-        font=('Digital-7', 15))
-    self.label.pack(expand=True)
+    def add_label(self, text, foreground='white'):
+        label = ttk.Label(
+              self,
+              text=text,
+              foreground=foreground,
+              font=('Digital-7', 15))
+        label.pack(expand=True)
+        self.labels.append(label)
+
+    def clear_labels(self):
+        for label in self.labels:
+            label.destroy()
+        self.labels = []
+
+    def update_values(self):
+        mineral_data = get_minerals_values()
+        if mineral_data:
+            self.clear_labels()
+            for md in mineral_data['data']:
+                self.add_label(f"{md['mineral']}: {int(md['auec']):,}")
+            if mineral_data['total'] > 100000:
+                self.add_label(f"TOTAL: {int(mineral_data['total']):,}", 'green')
+            elif mineral_data['total'] > 50000:
+                self.add_label(f"TOTAL: {int(mineral_data['total']):,}", 'yellow')
+            else:
+                self.add_label(f"TOTAL: {int(mineral_data['total']):,}", 'red')
+
+        self.after(1000, self.update_values)
 
 
 if __name__ == '__main__':
