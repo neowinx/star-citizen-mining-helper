@@ -1,5 +1,6 @@
-opencv-python
-pytesseract
+opencv-python~=4.5.5.62
+pytesseract~=0.3.8
 pillow
-numpy
+numpy~=1.22.2
 pywin32
+keyboard~=0.13.5

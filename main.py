@@ -8,7 +8,9 @@ from numpy import ndarray
 from vision import Vision
 from windowcapture import WindowCapture
 import tkinter as tk
-from tkinter import ttk
+from tkinter import ttk, Frame, BOTTOM, TOP
+
+import keyboard
 
 # WindowCapture.list_window_names()
 # exit()
@@ -104,17 +106,35 @@ class SCMHW(tk.Tk):
         self.title('SCMH')
         self.resizable(0, 0)
         self.geometry('320x240')
-        self['bg'] = 'black'
         self.attributes('-alpha', 0.5)
         self.attributes('-topmost', True)
         # change the background color to black
-        self.style = ttk.Style(self)
-        self.style.configure(
+        self['bg'] = 'black'
+
+        self.mainFrame = Frame(self)
+        self.mainFrame.pack(side=TOP)
+        self.mainFrame.style = ttk.Style(self)
+        self.mainFrame.style.configure(
             'TLabel',
             background='black',
             foreground='white')
-        self.labels = []
-        self.after(1000, self.update_values)
+        self.mainFrame.labels = []
+
+        label = ttk.Label(text='papa')
+        label.pack()
+        self.mainFrame.labels.append(label)
+
+        self.logFrame = Frame(self)
+        self.logFrame.pack(side=BOTTOM)
+        self.logFrame.labels = []
+
+        label = ttk.Label(text='mama')
+        label.pack()
+        self.logFrame.labels.append(label)
+
+        keyboard.add_hotkey('alt+r', self.destroy)
+        keyboard.add_hotkey('alt+t', self.update_values)
+        keyboard.add_hotkey('alt+p', lambda: self.add_label('mloso'))
 
     def add_label(self, text, foreground='white'):
         label = ttk.Label(
@@ -123,12 +143,12 @@ class SCMHW(tk.Tk):
               foreground=foreground,
               font=('Digital-7', 15))
         label.pack(expand=True)
-        self.labels.append(label)
+        self.mainFrame.labels.append(label)
 
     def clear_labels(self):
         for label in self.labels:
             label.destroy()
-        self.labels = []
+        self.mainFrame.labels = []
 
     def update_values(self):
         mineral_data = get_minerals_values()
@@ -142,8 +162,6 @@ class SCMHW(tk.Tk):
                 self.add_label(f"TOTAL: {int(mineral_data['total']):,}", 'yellow')
             else:
                 self.add_label(f"TOTAL: {int(mineral_data['total']):,}", 'red')
-
-        self.after(1000, self.update_values)
 
 
 if __name__ == '__main__':
