@@ -13,6 +13,7 @@
         <property name="width">200</property>
         <layout manager="pack">
           <property name="expand">true</property>
+          <property name="fill">both</property>
           <property name="side">top</property>
         </layout>
       </object>
@@ -23,8 +24,27 @@
         <property name="width">200</property>
         <layout manager="pack">
           <property name="expand">true</property>
-          <property name="side">bottom</property>
+          <property name="fill">both</property>
+          <property name="side">right</property>
         </layout>
+        <child>
+          <object class="tk.Text" id="text1">
+            <property name="exportselection">true</property>
+            <property name="height">10</property>
+            <property name="relief">flat</property>
+            <property name="state">normal</property>
+            <property name="tabstyle">tabular</property>
+            <property name="takefocus">false</property>
+            <property name="undo">false</property>
+            <property name="width">50</property>
+            <bind sequence="&lt;1&gt;" handler="callback" add="" />
+            <layout manager="pack">
+              <property name="expand">true</property>
+              <property name="fill">both</property>
+              <property name="side">left</property>
+            </layout>
+          </object>
+        </child>
       </object>
     </child>
   </object>
