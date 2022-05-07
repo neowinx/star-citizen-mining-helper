@@ -11,6 +11,11 @@ import tkinter as tk
 from tkinter import ttk, Frame, BOTTOM, TOP
 
 import keyboard
+import mouse
+from mouse import X, UP
+
+import robot
+from threading import Thread
 
 # WindowCapture.list_window_names()
 # exit()
@@ -100,12 +105,23 @@ def get_minerals_values():
         return {'data': data, 'total': int(total_auec)}
 
 
+running = False
+
+def autorun_toggle():
+   #running = not running 
+   print('now running')
+   #if running:
+   #    keyboard.press('w')
+   #else:
+   #    keyboard.release('w')
+
+
 class SCMHW(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title('SCMH')
         self.resizable(0, 0)
-        self.geometry('320x240')
+        self.geometry('320x240+500+0')
         self.attributes('-alpha', 0.5)
         self.attributes('-topmost', True)
         # change the background color to black
@@ -120,21 +136,27 @@ class SCMHW(tk.Tk):
             foreground='white')
         self.mainFrame.labels = []
 
-        label = ttk.Label(text='papa')
-        label.pack()
-        self.mainFrame.labels.append(label)
-
         self.logFrame = Frame(self)
         self.logFrame.pack(side=BOTTOM)
         self.logFrame.labels = []
 
-        label = ttk.Label(text='mama')
-        label.pack()
-        self.logFrame.labels.append(label)
+        self.text1 = tk.Text(self.logFrame)
+        self.text1.configure(
+            exportselection="true", height="10", relief="flat", state="normal"
+        )
+        self.text1.configure(
+            tabstyle="tabular", takefocus=False, undo="false", width="50"
+        )
+        self.text1.pack(expand="true", fill="both", side="left")
 
-        keyboard.add_hotkey('alt+r', self.destroy)
-        keyboard.add_hotkey('alt+t', self.update_values)
-        keyboard.add_hotkey('alt+p', lambda: self.add_label('mloso'))
+        #keyboard.add_hotkey('alt+r', self.destroy)
+        #keyboard.add_hotkey('alt+t', self.update_values)
+        #keyboard.add_hotkey('alt+p', self.autorun_toggles)
+        #mouse.on_button(self.after(1000, autorun_toggle), (), [X], [UP])
+
+    def autorun_toggles(self):
+      th = Thread(autorun_toggle)
+      th.start()
 
     def add_label(self, text, foreground='white'):
         label = ttk.Label(
@@ -163,8 +185,24 @@ class SCMHW(tk.Tk):
             else:
                 self.add_label(f"TOTAL: {int(mineral_data['total']):,}", 'red')
 
+scmhw = None
 
-if __name__ == '__main__':
+
+def runtk():  # runs in background thread
     scmhw = SCMHW()
     scmhw.mainloop()
+ 
 
+if __name__ == '__main__':
+    thd = Thread(target=runtk)   # gui thread
+    thd.daemon = True  # background thread will exit if main thread exits
+    thd.start()  # start tk loop
+
+    #keyboard.add_hotkey('alt+r', scmhw.destroy)
+    #keyboard.add_hotkey('alt+t', self.update_values)
+    keyboard.add_hotkey('alt+p', autorun_toggle)
+    #mouse.on_button(self.after(1000, autorun_toggle), (), [X], [UP])
+    
+    while True:  # run in main thread
+        time.sleep(.1)
+    
