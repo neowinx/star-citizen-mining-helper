@@ -5,7 +5,6 @@ import cv2
 import pytesseract
 from numpy import ndarray
 
-from vision import Vision
 from windowcapture import WindowCapture
 import tkinter as tk
 from tkinter import ttk
@@ -14,8 +13,6 @@ from tkinter import ttk
 # exit()
 
 wincap = WindowCapture()
-
-vision = Vision(None)
 
 pytesseract.pytesseract.tesseract_cmd = "D:\\Program Files\\Tesseract-OCR\\tesseract.exe"
 
