@@ -10,11 +10,13 @@ import mouse
 import time
 
 import numpy as np
+import pydirectinput
 
 from main import wincap
 from windowcapture import WindowCapture
 
 scan_result_in_space = cv2.cvtColor(cv2.imread('vision/templates/scan_result_in_space.png'), cv2.COLOR_BGR2GRAY)
+steering_cursor = cv2.cvtColor(cv2.imread('vision/templates/steering_cursor.png'), cv2.COLOR_BGR2GRAY)
 
 running = False
 focusing = False
@@ -57,39 +59,100 @@ def position():
 
 wincap = WindowCapture()
 
-def mining_noproblem():
-    print('scanning')
-    #keyboard.send('tab')
-    print('waiting scan results')
-    time.sleep(5)
+def template_match(template):
     print('getting screenshot')
-    img_rgb = wincap.get_screenshot()
+    scrsht_rgb = wincap.get_screenshot()
 
-    print('finding scanning points')
-    img_gray = cv2.cvtColor(img_rgb, cv2.COLOR_BGR2GRAY)
+    print('finding scanned points')
+    scr_gray = cv2.cvtColor(scrsht_rgb, cv2.COLOR_BGR2GRAY)
 
-    locations = cv2.matchTemplate(img_gray, scan_result_in_space, cv2.TM_CCOEFF_NORMED)
+    locations = cv2.matchTemplate(scr_gray, template, cv2.TM_CCOEFF_NORMED)
     # threshold = 0.5
     # locations = np.where(res >= threshold)
     min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(locations)
-    location = max_loc
+    return max_loc, scr_gray
 
-    # print('gettings closest point to the center')
-    # height = img_gray.shape[0]
-    # width = img_gray.shape[1]
-    # pt = np.array([width / 2, height / 2])
-    #
-    # nearest_kp = min(locations, key=lambda kp: np.linalg.norm(kp.pt - pt))
-    # print(f'nearest point found: {nearest_kp.pt}')
-    # print(f'stearing to: {nearest_kp.pt}')
-    mouse.move(location[0], location[1])
+def detect_objects(img):
+    locations, scr_gray = template_match(scan_result_in_space)
+    # threshold = 0.5
+    # locations = np.where(res >= threshold)
+    min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(locations)
+    return max_loc, scr_gray
+
+def center_of_image(img):
+    centerx = int(img.shape[0] / 2)
+    centery = int(img.shape[1] / 2)
+    return centerx, centery
+
+def steer_towards(toX, toY, fromX, fromY, step=1, duration=1):
+    steering = True
+    print(f'steering towards {toX, toY}')
+
+    x, y = fromX, fromY
+
+    while steering:
+        dx = step if fromX > toX else (step * -1)
+        dy = step if fromY > toY else (step * -1)
+
+        pydirectinput.moveTo(fromX - dx, fromY - dy)
+        time.sleep(duration)
+
+        if abs(fromX - toX) <= 10 and abs(fromY - toY) <= 10:
+            break
+
+def center_steering():
+    print('centering steering')
+    steering_cursor_loc, scr_gray = template_match(steering_cursor)
+    centerx, centery = center_of_image(scr_gray)
+    steer_towards(centerx, centery, steering_cursor_loc[0], steering_cursor_loc[1])
+
+def mining_noproblem():
+    print('scanning')
+    # keyboard.send('tab')
+
+    print('waiting scan results')
+    # time.sleep(5)
+
+    center_steering()
+    return
+
+    location, img_gray = detect_objects()
+
+    print(f'stearing to: {location}')
+
+    centerx, centery = center_of_image(img_gray)
+
+    step = 1
+
+    steering = True
+
+    #pydirectinput.moveTo(centerx, centery)
+    time.sleep(1)
+
+    print('steering')
+    while steering:
+        dx = step if centerx > location[0] else (step * -1)
+        dy = step if centery > location[1] else (step * -1)
+        x, y = pydirectinput.position()
+
+        pydirectinput.moveTo(x - dx, y - dy)
+
+        time.sleep(1)
+
+        location, img_gray = detect_objects()
+
+        if abs(centerx - location[0]) <= 10 and abs(centery - location[1]) <= 10:
+            break
+
+    print('done steering')
+    #keyboard.press('w')
 
 
 if __name__ == '__main__':
     keyboard.add_hotkey('shift+p', position)
-    keyboard.add_hotkey('shift+i', exit)
-    keyboard.add_hotkey('shift+o', hail_landing_services)
-    keyboard.add_hotkey('shift+w', mining_noproblem)
+    keyboard.add_hotkey('alt+q', exit)
+    keyboard.add_hotkey('alt+e', hail_landing_services)
+    keyboard.add_hotkey('control+w', mining_noproblem)
     mouse.on_button(focus_toggle, (), [mouse.X2], [mouse.UP])
     mouse.on_middle_click(autorun_toggle)
     #keyboard.wait()
