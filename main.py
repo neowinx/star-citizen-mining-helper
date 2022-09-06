@@ -5,12 +5,17 @@ import cv2
 import pytesseract
 from numpy import ndarray
 
+from vision import Vision
+from hsvfilter import HsvFilter
 from windowcapture import WindowCapture
 import tkinter as tk
 from tkinter import ttk
 
 # WindowCapture.list_window_names()
 # exit()
+
+# initialize the Vision class
+vision = Vision(None)
 
 wincap = WindowCapture()
 
@@ -20,22 +25,22 @@ MASS_ROI = {"x1": 185, "y1": 443, "x2": 420, "y2": 590}
 MINERALS_ROI = {"x1": 1488, "y1": 464, "x2": 1714, "y2": 600}
 MASS_RE = re.compile(r"Mass: (.+)")
 MINERALS_RE = {
-        "Quantainium": {"re": re.compile(r"Quantainium \(Raw\): (.+)%"), "price": 88.00},
-        "Bexalite": {"re": re.compile(r"Bexalite \(Raw\): (.+)%"), "price": 44.00},
-        "Taranite": {"re": re.compile(r"Taranite \(Raw\): (.+)%"), "price": 35.21},
-        "Borase": {"re": re.compile(r"Borase \(Ore\): (.+)%"), "price": 35.21},
-        "Laranite": {"re": re.compile(r"Laranite \(Raw\): (.+)%"), "price": 31.00},
-        "Agricium": {"re": re.compile(r"Agricium \(Ore\): (.+)%"), "price": 27.41},
-        "Hephaestanite": {"re": re.compile(r"Hephaestanite \(Raw\): (.+)%"), "price": 15.85},
-        "Titanium": {"re": re.compile(r"Titanium \(Ore\): (.+)%"), "price": 8.90},
-        "Diamond": {"re": re.compile(r"Diamond \(Raw\): (.+)%"), "price": 7.35},
-        "Gold": {"re": re.compile(r"Gold \(Ore\): (.+)%"), "price": 6.41},
-        "Copper": {"re": re.compile(r"Copper \(Ore\): (.+)%"), "price": 6.15},
-        "Beryl": {"re": re.compile(r"Beryl \(Raw\): (.+)%"), "price": 4.35},
-        "Tungsten": {"re": re.compile(r"Tungsten \(Ore\): (.+)%"), "price": 4.06},
-        "Corundum": {"re": re.compile(r"Corundum \(Raw\): (.+)%"), "price": 2.71},
-        "Quartz": {"re": re.compile(r"Quartz \(Raw\): (.+)%"), "price": 1.55},
-        "Aluminum": {"re": re.compile(r"Aluminum \(Ore\): (.+)%"), "price": 1.30},
+    "Quantainium": {"re": re.compile(r"Quantainium \(Raw\): (.+)%"), "price": 88.00},
+    "Bexalite": {"re": re.compile(r"Bexalite \(Raw\): (.+)%"), "price": 44.00},
+    "Taranite": {"re": re.compile(r"Taranite \(Raw\): (.+)%"), "price": 35.21},
+    "Borase": {"re": re.compile(r"Borase \(Ore\): (.+)%"), "price": 35.21},
+    "Laranite": {"re": re.compile(r"Laranite \(Raw\): (.+)%"), "price": 31.00},
+    "Agricium": {"re": re.compile(r"Agricium \(Ore\): (.+)%"), "price": 27.41},
+    "Hephaestanite": {"re": re.compile(r"Hephaestanite \(Raw\): (.+)%"), "price": 15.85},
+    "Titanium": {"re": re.compile(r"Titanium \(Ore\): (.+)%"), "price": 8.90},
+    "Diamond": {"re": re.compile(r"Diamond \(Raw\): (.+)%"), "price": 7.35},
+    "Gold": {"re": re.compile(r"Gold \(Ore\): (.+)%"), "price": 6.41},
+    "Copper": {"re": re.compile(r"Copper \(Ore\): (.+)%"), "price": 6.15},
+    "Beryl": {"re": re.compile(r"Beryl \(Raw\): (.+)%"), "price": 4.35},
+    "Tungsten": {"re": re.compile(r"Tungsten \(Ore\): (.+)%"), "price": 4.06},
+    "Corundum": {"re": re.compile(r"Corundum \(Raw\): (.+)%"), "price": 2.71},
+    "Quartz": {"re": re.compile(r"Quartz \(Raw\): (.+)%"), "price": 1.55},
+    "Aluminum": {"re": re.compile(r"Aluminum \(Ore\): (.+)%"), "price": 1.30},
 }
 
 
@@ -61,41 +66,11 @@ def try_to_find(pattern, text_from_roi):
         return txt_found.group(1)
 
 
-def get_minerals_values():
-    img = wincap.get_screenshot()
-
-    # hsv_filter = HsvFilter(80, 0, 174, 110, 151, 255, 0, 0, 0, 0)
-    # img = vision.apply_hsv_filter(img, hsv_filter)
-
-    mass_result = search_text(roi(img, MASS_ROI), MASS_RE)
-    minerals_img = roi(img, MINERALS_ROI)
-    minerals_text = pytesseract.image_to_string(minerals_img)
+class SCMHW(tk.Tk):
 
     data = []
-    total_auec = 0
+    mass = None
 
-    for key in MINERALS_RE.keys():
-        mineral_result: str = try_to_find(MINERALS_RE[key]['re'], minerals_text)
-
-        # this is not really the best approach but I am in a hurry right now
-        if mineral_result and mass_result:
-            try:
-                units = float(mineral_result) * 0.02 * float(mass_result)
-                auec = MINERALS_RE[key]['price'] * units
-                # print(f"{key} | units: {units} auec: {int(auec):,}")
-                data.append({'mineral': key, 'auec': int(auec)})
-                total_auec += auec
-            except ValueError:
-                total_auec = total_auec
-
-    if total_auec > 0:
-        # print(f"Total aUEC: {int(total_auec):,}")
-        # print()
-
-        return {'data': data, 'total': int(total_auec)}
-
-
-class SCMHW(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title('SCMH')
@@ -115,10 +90,10 @@ class SCMHW(tk.Tk):
 
     def add_label(self, text, foreground='white'):
         label = ttk.Label(
-              self,
-              text=text,
-              foreground=foreground,
-              font=('Digital-7', 15))
+            self,
+            text=text,
+            foreground=foreground,
+            font=('Digital-7', 15))
         label.pack(expand=True)
         self.labels.append(label)
 
@@ -128,7 +103,7 @@ class SCMHW(tk.Tk):
         self.labels = []
 
     def update_values(self):
-        mineral_data = get_minerals_values()
+        mineral_data = get_minerals_values(self)
         if mineral_data:
             self.clear_labels()
             for md in mineral_data['data']:
@@ -143,7 +118,64 @@ class SCMHW(tk.Tk):
         self.after(1000, self.update_values)
 
 
+def get_minerals_values(scmh: SCMHW):
+    img = wincap.get_screenshot()
+
+    hsv_filter = HsvFilter(80, 0, 174, 110, 151, 255, 0, 0, 0, 0)
+    img = vision.apply_hsv_filter(img, hsv_filter)
+
+    mass_result = search_text(roi(img, MASS_ROI), MASS_RE)
+    if mass_result:
+        # this is not really the best approach but I am in a hurry right now
+        if not scmh.mass or scmh.mass != mass_result:
+            try:
+                scmh.mass = float(mass_result)
+                print(f"mass: {scmh.mass} ")
+                scmh.data = []
+            except ValueError:
+                # ignore
+                pass
+
+    minerals_img = roi(img, MINERALS_ROI)
+    minerals_img_filtered = vision.apply_hsv_filter(minerals_img, hsv_filter)
+
+    # Lets leave this here just for debugging in the near future
+    # cv2.imshow("minerals_img", minerals_img_filtered)
+    # if cv2.waitKey(1) == ord('q'):
+    #     cv2.destroyAllWindows()
+
+    minerals_text = pytesseract.image_to_string(minerals_img_filtered)
+    print(minerals_text)
+
+    for key in MINERALS_RE.keys():
+        mineral_result: str = try_to_find(MINERALS_RE[key]['re'], minerals_text)
+
+        # this is not really the best approach but I am in a hurry right now
+        if scmh.mass and mineral_result:
+            try:
+                units = float(mineral_result) * 0.02 * scmh.mass
+                auec = MINERALS_RE[key]['price'] * units
+                print(f"{key} | units: {units} auec: {int(auec):,}")
+                maybe_data = list(filter(lambda m: m['mineral'] == key, scmh.data))
+                if len(maybe_data) > 0:
+                    maybe_data[0]['auec'] = int(auec)
+                else:
+                    scmh.data.append({'mineral': key, 'auec': int(auec)})
+            except ValueError:
+                pass
+
+    total_auec = 0
+
+    for data in scmh.data:
+        total_auec += data['auec']
+
+    if total_auec > 0:
+        # Lets leave this here just for debugging in the near future
+        # print(f"Total aUEC: {int(total_auec):,}")
+        # print()
+        return {'data': scmh.data, 'total': int(total_auec)}
+
+
 if __name__ == '__main__':
     scmhw = SCMHW()
     scmhw.mainloop()
-
